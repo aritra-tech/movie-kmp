@@ -4,25 +4,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.aritradas.movieapp.domain.model.AccountDetails
 import com.aritradas.movieapp.domain.model.Movie
-import com.aritradas.movieapp.domain.repository.FavoriteRepository
+import com.aritradas.movieapp.domain.usecase.GetAccountDetailsUseCase
+import com.aritradas.movieapp.domain.usecase.GetFavoriteMoviesUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 class FavouritesViewModel(
-    private val favoriteRepository: FavoriteRepository
+    private val getAccountDetailsUseCase: GetAccountDetailsUseCase,
+    private val getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase
 ) : ViewModel() {
 
     private val _accountId = MutableStateFlow<Int?>(null)
     
     val favoriteMovies: Flow<PagingData<Movie>> = _accountId.flatMapLatest { id ->
         if (id != null) {
-            favoriteRepository.getFavoriteMoviesPager(id).cachedIn(viewModelScope)
+            getFavoriteMoviesUseCase(id).cachedIn(viewModelScope)
         } else {
             emptyFlow()
         }
@@ -35,7 +35,7 @@ class FavouritesViewModel(
     private fun getAccountDetails() {
         viewModelScope.launch {
             try {
-                val account = favoriteRepository.getAccountDetails()
+                val account = getAccountDetailsUseCase()
                 _accountId.value = account.id
             } catch (e: Exception) {
                 // Handle error

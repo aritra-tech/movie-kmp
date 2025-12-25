@@ -3,16 +3,19 @@ package com.aritradas.movieapp.presentation.movieDetails
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aritradas.movieapp.domain.model.MovieDetail
-import com.aritradas.movieapp.domain.model.MovieAccountState
-import com.aritradas.movieapp.domain.repository.FavoriteRepository
-import com.aritradas.movieapp.domain.repository.MovieRepository
+import com.aritradas.movieapp.domain.usecase.GetAccountDetailsUseCase
+import com.aritradas.movieapp.domain.usecase.GetMovieAccountStateUseCase
+import com.aritradas.movieapp.domain.usecase.GetMovieDetailsUseCase
+import com.aritradas.movieapp.domain.usecase.ToggleFavoriteUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class MovieDetailViewModel(
-    private val movieRepository: MovieRepository,
-    private val favoriteRepository: FavoriteRepository
+    private val getMovieDetailsUseCase: GetMovieDetailsUseCase,
+    private val getAccountDetailsUseCase: GetAccountDetailsUseCase,
+    private val getMovieAccountStateUseCase: GetMovieAccountStateUseCase,
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase
 ) : ViewModel() {
 
     private val _movieDetail = MutableStateFlow<MovieDetail?>(null)
@@ -21,8 +24,6 @@ class MovieDetailViewModel(
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite = _isFavorite.asStateFlow()
 
-    // Assuming we need to store accountId somewhere, or fetch it.
-    // For simplicity, we'll fetch account details first or assume hardcoded/passed.
     private var accountId: Int? = null
 
     init {
@@ -32,7 +33,7 @@ class MovieDetailViewModel(
     private fun fetchAccountDetails() {
         viewModelScope.launch {
             try {
-                val account = favoriteRepository.getAccountDetails()
+                val account = getAccountDetailsUseCase()
                 accountId = account.id
             } catch (e: Exception) {
                 // Handle error
@@ -43,7 +44,7 @@ class MovieDetailViewModel(
     fun getMovieDetails(movieId: Int) {
         viewModelScope.launch {
             try {
-                _movieDetail.value = movieRepository.getMovieDetails(movieId)
+                _movieDetail.value = getMovieDetailsUseCase(movieId)
                 checkIfFavorite(movieId)
             } catch (e: Exception) {
                 // Handle error
@@ -54,7 +55,7 @@ class MovieDetailViewModel(
     private fun checkIfFavorite(movieId: Int) {
         viewModelScope.launch {
             try {
-                val state = favoriteRepository.getMovieAccountStates(movieId)
+                val state = getMovieAccountStateUseCase(movieId)
                 _isFavorite.value = state.favorite
             } catch (e: Exception) {
                 // Handle error
@@ -68,7 +69,7 @@ class MovieDetailViewModel(
 
         viewModelScope.launch {
             try {
-                favoriteRepository.addFavorite(
+                toggleFavoriteUseCase(
                     accountId = currentAccountId,
                     mediaId = movieId,
                     isFavorite = !currentFavoriteStatus

@@ -5,6 +5,7 @@ import com.aritradas.movieapp.data.repository.FavoriteRepositoryImpl
 import com.aritradas.movieapp.data.repository.MovieRepositoryImpl
 import com.aritradas.movieapp.domain.repository.FavoriteRepository
 import com.aritradas.movieapp.domain.repository.MovieRepository
+import com.aritradas.movieapp.domain.usecase.*
 import com.aritradas.movieapp.presentation.favourites.FavouritesViewModel
 import com.aritradas.movieapp.presentation.movieDetails.MovieDetailViewModel
 import com.aritradas.movieapp.presentation.movies.MoviesViewModel
@@ -18,7 +19,6 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 val appModule = module {
@@ -51,13 +51,7 @@ val appModule = module {
             }
 
             defaultRequest {
-                // Warning: Token should ideally be injected or loaded from config
-                // check if we can access BuildKonfig or similar. 
-                // For now, assuming it will be passed or handled by interceptor in app, 
-                // but user code had it hardcoded. We'll use a placeholder or expect it.
-                // Reverting to hardcoded placeholder for demo purposes if Config object not present.
-                // Or better: header("Authorization", "Bearer ${getPlatformConfig().apiKey}")
-                 header("Accept", "application/json")
+                header("Accept", "application/json")
             }
         }
     }
@@ -67,7 +61,28 @@ val appModule = module {
     single<MovieRepository> { MovieRepositoryImpl(apiServices = get()) }
     single<FavoriteRepository> { FavoriteRepositoryImpl(apiServices = get()) }
 
-    factory { MoviesViewModel(movieRepository = get(), favoriteRepository = get()) }
-    factory { MovieDetailViewModel(movieRepository = get(), favoriteRepository = get()) }
-    factory { FavouritesViewModel(favoriteRepository = get()) }
+    // UseCases
+    factory { GetMoviesUseCase(movieRepository = get()) }
+    factory { GetMovieDetailsUseCase(movieRepository = get()) }
+    factory { GetAccountDetailsUseCase(favoriteRepository = get()) }
+    factory { GetMovieAccountStateUseCase(favoriteRepository = get()) }
+    factory { ToggleFavoriteUseCase(favoriteRepository = get()) }
+    factory { GetFavoriteMoviesUseCase(favoriteRepository = get()) }
+
+    // ViewModels
+    factory { MoviesViewModel(getMoviesUseCase = get()) }
+    factory { 
+        MovieDetailViewModel(
+            getMovieDetailsUseCase = get(),
+            getAccountDetailsUseCase = get(),
+            getMovieAccountStateUseCase = get(),
+            toggleFavoriteUseCase = get()
+        ) 
+    }
+    factory { 
+        FavouritesViewModel(
+            getAccountDetailsUseCase = get(),
+            getFavoriteMoviesUseCase = get()
+        ) 
+    }
 }
