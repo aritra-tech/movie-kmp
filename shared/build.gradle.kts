@@ -50,7 +50,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.aritradas.movie_kmp.shared"
+    namespace = "com.aritradas.movieapp.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
